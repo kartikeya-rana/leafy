@@ -44,24 +44,36 @@ Leafy is orchestrated by an LLM. One orchestrator on Gemini holds a toolbox and 
 flowchart TD
     You([You]) <--> UI[Dashboard + chat]
     UI --> Guard["Security screen<br/>prompt-injection · PII redaction · image checks"]
-    Guard --> Leafy["🌿 Leafy orchestrator<br/>(Gemini)"]
+    Guard --> Leafy["🌿 Leafy orchestrator · Gemini<br/>routes the request, gathers data, delegates"]
 
-    Leafy --> WR["watering_reasoner<br/>specialist sub-agent"]
-    Leafy --> SH["Shelter advisor<br/>(deterministic)"]
-    Leafy --> SP["Spot / Light Check<br/>(vision + deterministic)"]
+    %% Data-access tools the orchestrator owns
     Leafy --> CAT["catalogue + profile tools"]
+    Leafy --> KBT["plant knowledge lookup"]
     Leafy --> GEO["geocode"]
-    Leafy --> MCP["Weather MCP server<br/>(separate process)"]
-
-    CAT --> DB[("SQLite")]
-    WR --> KB[("plants.json")]
-    SP --> KB
-    SH --> MCP
+    Leafy --> MCP["Weather MCP server<br/>separate process"]
+    CAT --> DB[("SQLite<br/>plants · placement · dates · location")]
+    KBT --> KB[("plants.json<br/>care profiles · tolerances · light needs")]
     GEO --> OM1["Open-Meteo geocoding"]
     MCP --> OM2["Open-Meteo forecast"]
+
+    %% Capabilities
+    Leafy --> WR["watering_reasoner · sub-agent (LLM)<br/>fed plant + care profile + live weather<br/>→ watering window + moisture check"]
+    Leafy --> SH["Shelter advisor · deterministic graph<br/>forecast → severity 0–4, vs each plant's<br/>tolerance + placement → keep / in / out"]
+    Leafy --> SP["Spot / Light Check · vision + deterministic<br/>direction + latitude + obstruction → light tier 0–3<br/>matched to each plant's light range"]
+
+    %% What the self-contained deterministic capabilities read for themselves
+    SH -. reads .-> DB
+    SH -. reads .-> KB
+    SH -. reads .-> MCP
+    SP -. reads .-> DB
+    SP -. reads .-> KB
 ```
 
-When you ask for watering advice, Leafy makes sure it has your location, the plant, and the last-watered date and placement, asking for whatever is missing. It pulls live conditions from the weather server and delegates the final call to the watering specialist, which returns a structured recommendation grounded in the plant's profile.
+The orchestrator owns the data-access tools. It reads your catalogue and profile from SQLite, looks up care profiles, tolerances, and light needs from the plant knowledge base, geocodes a city, and fetches live weather from the Weather MCP server. Each capability then uses that data in one of two ways.
+
+Watering advice is gather-then-delegate. The orchestrator collects the plant record, its care profile, and the live forecast, and passes all three to the watering specialist, a sub-agent that reasons over them and returns a structured window plus a moisture check. The specialist never reads the stores itself; it only sees what the orchestrator hands it.
+
+Shelter and spot advice are self-contained deterministic modules. The shelter advisor reads your plants and their placement from SQLite and each plant's tolerance from the knowledge base, fetches the day's forecast from the Weather MCP, maps that forecast to a severity from 0 (sunny) to 4 (snow) using the weather code, and compares it against every plant's tolerance and current placement to decide keep, move indoors, or move outdoors, each with a reason. The spot and light check reads your latitude from the profile and plant light needs from the knowledge base; from the compass direction the spot faces, your latitude, and how obstructed it is, it computes a light tier from 0 (shade) to 3 (direct sun) and matches that against each plant's light range. In both, the only fuzzy step is perception, such as reading a photo; every decision is computed in plain code and unit-tested.
 
 ## Design decisions
 
