@@ -1,0 +1,90 @@
+<svg viewBox="0 0 1040 600" xmlns="http://www.w3.org/2000/svg" font-family="Inter, ui-sans-serif, system-ui, sans-serif">
+  <rect width="1040" height="600" fill="#F7F6F1"/>
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#55606A"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="48" font-size="25" font-weight="700" fill="#2F6B3C">Leafy — AI perceives, code decides</text>
+  <text x="40" y="72" font-size="14" fill="#6B7280">Every capability pairs model reasoning with deterministic, data-grounded logic — this is what makes it more than a chatbot.</text>
+
+  <!-- legend -->
+  <g font-size="12" fill="#1F2421">
+    <rect x="760" y="30" width="14" height="14" rx="3" fill="#E9F2EA" stroke="#2F6B3C"/>
+    <text x="780" y="41">model reasoning</text>
+    <rect x="760" y="52" width="14" height="14" rx="3" fill="#FBEFDD" stroke="#E0A458"/>
+    <text x="780" y="63">deterministic (no LLM)</text>
+  </g>
+
+  <!-- column headers -->
+  <text x="340" y="118" text-anchor="middle" font-size="12.5" font-weight="700" fill="#55606A">PERCEPTION / GATHER</text>
+  <text x="620" y="118" text-anchor="middle" font-size="12.5" font-weight="700" fill="#55606A">DECISION</text>
+  <text x="892" y="118" text-anchor="middle" font-size="12.5" font-weight="700" fill="#55606A">RESULT</text>
+
+  <!-- ================= Row 1: Watering ================= -->
+  <rect x="40" y="132" width="170" height="88" rx="11" fill="#2F6B3C"/>
+  <text x="125" y="170" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">Watering</text>
+  <text x="125" y="189" text-anchor="middle" font-size="11" fill="#CDE4D3">when to water next</text>
+
+  <rect x="225" y="132" width="230" height="88" rx="11" fill="#E9F2EA" stroke="#2F6B3C"/>
+  <text x="340" y="168" text-anchor="middle" font-size="12" fill="#1F2421">Leafy gathers plant, last-watered,</text>
+  <text x="340" y="184" text-anchor="middle" font-size="12" fill="#1F2421">placement + live weather</text>
+
+  <rect x="505" y="132" width="230" height="88" rx="11" fill="#E9F2EA" stroke="#2F6B3C"/>
+  <text x="620" y="168" text-anchor="middle" font-size="12" fill="#1F2421">Specialist reasoner (LLM),</text>
+  <text x="620" y="184" text-anchor="middle" font-size="12" fill="#1F2421">grounded in KB data — no guessing</text>
+
+  <rect x="785" y="132" width="215" height="88" rx="11" fill="#FFFFFF" stroke="#C7CDD2"/>
+  <text x="892" y="168" text-anchor="middle" font-size="12" fill="#1F2421">Watering window</text>
+  <text x="892" y="184" text-anchor="middle" font-size="11" fill="#6B7280">+ how to check it yourself</text>
+
+  <!-- ================= Row 2: Shelter ================= -->
+  <rect x="40" y="256" width="170" height="88" rx="11" fill="#2F6B3C"/>
+  <text x="125" y="294" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">Shelter</text>
+  <text x="125" y="313" text-anchor="middle" font-size="11" fill="#CDE4D3">move in / out today</text>
+
+  <rect x="225" y="256" width="230" height="88" rx="11" fill="#FBEFDD" stroke="#E0A458"/>
+  <text x="340" y="292" text-anchor="middle" font-size="12" fill="#1F2421">Map today's forecast to a</text>
+  <text x="340" y="308" text-anchor="middle" font-size="12" fill="#1F2421">severity category (WMO code)</text>
+
+  <rect x="505" y="256" width="230" height="88" rx="11" fill="#FBEFDD" stroke="#E0A458"/>
+  <text x="620" y="292" text-anchor="middle" font-size="12" fill="#1F2421">Compare against the plant's</text>
+  <text x="620" y="308" text-anchor="middle" font-size="12" fill="#1F2421">stored tolerance (deterministic)</text>
+
+  <rect x="785" y="256" width="215" height="88" rx="11" fill="#FFFFFF" stroke="#C7CDD2"/>
+  <text x="892" y="292" text-anchor="middle" font-size="12" fill="#1F2421">Keep / bring in / put out</text>
+  <text x="892" y="308" text-anchor="middle" font-size="11" fill="#6B7280">per plant, with a reason</text>
+
+  <!-- ================= Row 3: Spot / Light ================= -->
+  <rect x="40" y="380" width="170" height="88" rx="11" fill="#2F6B3C"/>
+  <text x="125" y="418" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">Spot / Light</text>
+  <text x="125" y="437" text-anchor="middle" font-size="11" fill="#CDE4D3">what suits a spot</text>
+
+  <rect x="225" y="380" width="230" height="88" rx="11" fill="#E9F2EA" stroke="#2F6B3C"/>
+  <text x="340" y="416" text-anchor="middle" font-size="12" fill="#1F2421">Gemini vision reads the photo</text>
+  <text x="340" y="432" text-anchor="middle" font-size="12" fill="#1F2421">(indoor? obstruction?)</text>
+
+  <rect x="505" y="380" width="230" height="88" rx="11" fill="#FBEFDD" stroke="#E0A458"/>
+  <text x="620" y="416" text-anchor="middle" font-size="12" fill="#1F2421">Light tier from azimuth +</text>
+  <text x="620" y="432" text-anchor="middle" font-size="12" fill="#1F2421">latitude → match plants</text>
+
+  <rect x="785" y="380" width="215" height="88" rx="11" fill="#FFFFFF" stroke="#C7CDD2"/>
+  <text x="892" y="416" text-anchor="middle" font-size="12" fill="#1F2421">Plants that fit the spot</text>
+  <text x="892" y="432" text-anchor="middle" font-size="11" fill="#6B7280">+ observe it over a day</text>
+
+  <!-- arrows -->
+  <g stroke="#55606A" stroke-width="1.5" fill="none">
+    <path d="M457,176 L503,176" marker-end="url(#a2)"/>
+    <path d="M737,176 L783,176" marker-end="url(#a2)"/>
+    <path d="M457,300 L503,300" marker-end="url(#a2)"/>
+    <path d="M737,300 L783,300" marker-end="url(#a2)"/>
+    <path d="M457,424 L503,424" marker-end="url(#a2)"/>
+    <path d="M737,424 L783,424" marker-end="url(#a2)"/>
+  </g>
+
+  <!-- footer note -->
+  <rect x="40" y="506" width="960" height="60" rx="12" fill="#FFFFFF" stroke="#C7CDD2"/>
+  <text x="60" y="532" font-size="13" font-weight="700" fill="#2F6B3C">Why this matters</text>
+  <text x="60" y="552" font-size="12.5" fill="#1F2421">The LLM handles the fuzzy parts (conversation, gathering, reading a photo); deterministic code makes the decision it can be trusted on — verifiable, testable, and grounded in real data and live weather.</text>
+</svg>

@@ -1,0 +1,12 @@
+metrics_to_run:
+  - routing_correctness
+  - recommendation_quality
+  - security_containment
+
+custom_metrics:
+  - name: routing_correctness
+    custom_function_file: metric_routing.py
+  - name: recommendation_quality
+    custom_function_file: metric_recommendation.py
+  - name: security_containment
+    custom_function_file: metric_security.py
