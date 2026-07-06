@@ -278,3 +278,84 @@ def cleanse_weather_details(text: str) -> str:
     return text
 
 
+
+
+# ---------------------------------------------------------------------------
+# Internal parameter / field-name scrubber (general output-hygiene net)
+# ---------------------------------------------------------------------------
+# Defense in depth: a single pass that removes internal schema field names and
+# raw parameter dumps from ANY user-facing reply, so no capability can leak
+# implementation details like "min_days: 2, max_days: 7" into the chat. This is
+# the general net that catches what the per-topic scrubbers (light tiers,
+# weather categories) do not.
+#
+# Machine fields are unambiguous identifiers (snake_case / unit-suffixed) and
+# are stripped wherever they appear. Word fields are ordinary English words
+# ("placement", "azimuth") that are only stripped when they appear as a
+# "field: value" leak, never as normal prose.
+_MACHINE_FIELDS = [
+    "baseline_interval_days", "recent_precip_mm_2d", "min_safe_temp_c",
+    "max_category", "drought_tolerance", "computed_window", "weather_tolerance",
+    "obstruction_level", "is_generic", "light_tier", "humidity_pct", "wind_kmh",
+    "precip_mm", "temp_max_c", "temp_min_c", "temp_c", "min_days", "max_days",
+    "weathercode",
+]
+_WORD_FIELDS = ["placement", "azimuth"]
+
+_ALL_INTERNAL_FIELDS_ALT = "|".join(
+    re.escape(n) for n in (_MACHINE_FIELDS + _WORD_FIELDS)
+)
+_MACHINE_FIELDS_ALT = "|".join(re.escape(n) for n in _MACHINE_FIELDS)
+_WORD_FIELDS_ALT = "|".join(re.escape(n) for n in _WORD_FIELDS)
+
+# A machine field, optionally followed by ": value" / "= value".
+_MACHINE_TOKEN_RE = re.compile(
+    r"\b(?:" + _MACHINE_FIELDS_ALT + r")\b\s*(?:[:=]\s*-?\d+(?:\.\d+)?\s*°?[cCfF%]?)?"
+)
+# A word field only when written as a "field: value" leak.
+_WORD_TOKEN_RE = re.compile(
+    r"\b(?:" + _WORD_FIELDS_ALT + r")\b\s*[:=]\s*[-\w.°%]+"
+)
+
+
+def _strip_bracketed_with_field(text: str, open_ch: str, close_ch: str) -> str:
+    """Removes a bracketed group entirely if it contains any internal field."""
+    inner = r"[^" + re.escape(open_ch + close_ch) + r"]*?"
+    pattern = re.compile(
+        r"\s*" + re.escape(open_ch) + inner
+        + r"\b(?:" + _ALL_INTERNAL_FIELDS_ALT + r")\b" + inner
+        + re.escape(close_ch)
+    )
+    return pattern.sub("", text)
+
+
+def cleanse_internal_params(text: str) -> str:
+    """Removes internal schema field names and raw parameter references from
+    user-facing text. Defense-in-depth output hygiene applied to every
+    capability's chat output.
+
+    Args:
+        text: The text to cleanse.
+
+    Returns:
+        Cleaned text with internal field names / parameter dumps removed.
+    """
+    if not text:
+        return text
+
+    # 1. Drop any parenthetical/bracketed group that contains an internal field,
+    #    e.g. "(min_days: 2, max_days: 7)" -> "".
+    for open_ch, close_ch in (("(", ")"), ("[", "]"), ("{", "}")):
+        text = _strip_bracketed_with_field(text, open_ch, close_ch)
+
+    # 2. Remove any remaining inline field tokens / "field: value" leaks.
+    text = _MACHINE_TOKEN_RE.sub("", text)
+    text = _WORD_TOKEN_RE.sub("", text)
+
+    # 3. Tidy artifacts (empty brackets, doubled spaces, space-before-punct).
+    text = re.sub(r"\(\s*[,;]?\s*\)", "", text)
+    text = re.sub(r"\[\s*[,;]?\s*\]", "", text)
+    text = re.sub(r"\s+([,.;:)])", r"\1", text)
+    text = re.sub(r"\(\s+", "(", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    return text.strip()

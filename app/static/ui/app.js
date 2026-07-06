@@ -358,7 +358,7 @@ function renderDashboardPlants() {
             </span>
           ` : ""}
           ${sh ? `
-            <span class="status-chip ${shStyle.bg} ${shStyle.text} border ${shStyle.border}" title="${escapeHtml(sh.reason || "")}">
+            <span class="status-chip ${shStyle.bg} ${shStyle.text} border ${shStyle.border}" title="${escapeHtml(scrubOut(sh.reason || ""))}">
               <i data-lucide="${shStyle.icon}" class="w-3.5 h-3.5"></i>
               ${escapeHtml(sh.label)}
             </span>
@@ -669,7 +669,7 @@ function parseShelterTextAndRender(bubble) {
         <div class="flex items-start justify-between gap-3 border-b border-linen last:border-0 pb-2.5 last:pb-0 text-ink">
           <div class="min-w-0">
             <div class="font-semibold text-sm">${escapeHtml(item.name)} <span class="text-xs font-normal text-ink-muted">(${escapeHtml(item.species)})</span></div>
-            <div class="text-xs text-ink-muted mt-0.5">${escapeHtml(item.reason)}</div>
+            <div class="text-xs text-ink-muted mt-0.5">${escapeHtml(scrubOut(item.reason))}</div>
           </div>
           <span class="shrink-0 text-xs px-2.5 py-1 rounded-full font-semibold border ${badgeStyle(item.action)}">
             ${escapeHtml(item.action)}
@@ -730,12 +730,12 @@ function processStructuredOutputs() {
             <div class="font-semibold text-base text-leaf-dark">${escapeHtml(r.next_watering_window)}</div>
           </div>
         </div>
-        <p class="text-sm text-ink-muted mb-3">${escapeHtml(r.reason)}</p>
+        <p class="text-sm text-ink-muted mb-3">${escapeHtml(scrubOut(r.reason))}</p>
         <div class="bg-cream border-l-4 border-leaf-ring rounded-r-lg p-3 text-xs text-ink-muted">
           <div class="font-semibold text-leaf mb-1 flex items-center gap-1">
             <i data-lucide="info" class="w-3.5 h-3.5"></i> Moisture Check Tip
           </div>
-          ${escapeHtml(r.moisture_check)}
+          ${escapeHtml(scrubOut(r.moisture_check))}
         </div>
       `;
     }
@@ -814,6 +814,37 @@ function cleanseLightTiers(text) {
   return text.replace(/(?:light\s+)?tier\s+(?:of\s+)?([0-3])/gi, (match, num) => {
     return mappings[num] || match;
   });
+}
+
+function cleanseInternalParams(text) {
+  if (!text) return "";
+  var machineFields = ["baseline_interval_days","recent_precip_mm_2d","min_safe_temp_c","max_category","drought_tolerance","computed_window","weather_tolerance","obstruction_level","is_generic","light_tier","humidity_pct","wind_kmh","precip_mm","temp_max_c","temp_min_c","temp_c","min_days","max_days","weathercode"];
+  var wordFields = ["placement","azimuth"];
+  var allAlt = machineFields.concat(wordFields).join("|");
+  var machineAlt = machineFields.join("|");
+  var wordAlt = wordFields.join("|");
+  var result = text;
+  var groups = [["\\(","\\)","\\(\\)"],["\\[","\\]","\\[\\]"],["\\{","\\}","\\{\\}"]];
+  for (var i = 0; i < groups.length; i++) {
+    var o = groups[i][0], c = groups[i][1], pair = groups[i][2];
+    var inner = "[^" + pair + "]*?";
+    var re = new RegExp("\\s*" + o + inner + "\\b(?:" + allAlt + ")\\b" + inner + c, "g");
+    result = result.replace(re, "");
+  }
+  var machineTokenRe = new RegExp("\\b(?:" + machineAlt + ")\\b\\s*(?:[:=]\\s*-?\\d+(?:\\.\\d+)?\\s*°?[cCfF%]?)?", "g");
+  result = result.replace(machineTokenRe, "");
+  var wordTokenRe = new RegExp("\\b(?:" + wordAlt + ")\\b\\s*[:=]\\s*[-\\w.°%]+", "g");
+  result = result.replace(wordTokenRe, "");
+  result = result.replace(/\(\s*[,;]?\s*\)/g, "");
+  result = result.replace(/\[\s*[,;]?\s*\]/g, "");
+  result = result.replace(/\s+([,.;:)])/g, "$1");
+  result = result.replace(/\(\s+/g, "(");
+  result = result.replace(/[ \t]{2,}/g, " ");
+  return result.trim();
+}
+
+function scrubOut(text) {
+  return cleanseInternalParams(cleanseWeatherDetails(cleanseLightTiers(text || "")));
 }
 
 function cleanseWeatherDetails(text) {
@@ -910,10 +941,10 @@ function handleEvent(evt) {
       if (evt.partial) {
         streamText += part.text;
         if (!streamEl) streamEl = addLeafyBubble("");
-        streamEl.innerHTML = renderMarkdown(cleanseWeatherDetails(cleanseLightTiers(streamText)));
+        streamEl.innerHTML = renderMarkdown(scrubOut(streamText));
       } else {
         if (!streamEl) streamEl = addLeafyBubble("");
-        streamEl.innerHTML = renderMarkdown(cleanseWeatherDetails(cleanseLightTiers(part.text)));
+        streamEl.innerHTML = renderMarkdown(scrubOut(part.text));
         streamText = "";
       }
       scrollToBottom();

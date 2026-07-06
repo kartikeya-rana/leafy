@@ -65,6 +65,7 @@ from google.genai import types
 
 from app.security.callback import (
     image_guardrail_before_model_callback,
+    output_hygiene_after_model_callback,
     security_before_model_callback,
 )
 from app.shelter.graph import shelter_advisor as shelter_advisor_wf
@@ -408,9 +409,10 @@ You will receive a request containing this JSON structure:
 - computed_window: The exact target next watering window (e.g. 'in 2-3 days, by July 7th' or 'today')
 
 RULES:
-1. You MUST explain the target watering window ('computed_window') provided in the request. Never invent or suggest a different number or date range.
+1. You MUST explain the exact target watering window you are given. Never invent or suggest a different date or range.
 2. Always include soil moisture check instructions.
-3. If is_generic is True, state that guidance is generic.
+3. If the guidance is generic (species not in our database), say so plainly.
+4. OUTPUT HYGIENE (critical). Never reveal, quote, or reference any internal field name, JSON key, or raw parameter in your reply. Do NOT write things like min_days, max_days, baseline_interval_days, drought_tolerance, is_generic, computed_window, weathercode, weather_tolerance, max_category, min_safe_temp_c, light_tier, humidity_pct, wind_kmh, or precip_mm. Speak only in plain, human language. Describe timing naturally (for example "roses like a drink every few days"), never as a parameter or range such as "min_days: 2". Explain the window and the reason in ordinary words a plant owner would understand.
 """,
     output_schema=ReasonerOutput,
     generate_content_config=types.GenerateContentConfig(
@@ -546,10 +548,21 @@ async def watering_reasoner(request: str, tool_context: ToolContext) -> dict:
     moisture_check = reasoner_res.get("moisture_check", "") if isinstance(reasoner_res, dict) else getattr(reasoner_res, "moisture_check", "")
     is_generic_guidance = reasoner_res.get("is_generic_guidance", False) if isinstance(reasoner_res, dict) else getattr(reasoner_res, "is_generic_guidance", False)
 
+    from app.security.guardrails import (
+        cleanse_internal_params,
+        cleanse_light_tiers,
+        cleanse_weather_details,
+    )
+
+    def _scrub(t: str) -> str:
+        return cleanse_internal_params(
+            cleanse_light_tiers(cleanse_weather_details(t or ""))
+        )
+
     return {
         "next_watering_window": window_info["next_watering_window"],
-        "reason": reason,
-        "moisture_check": moisture_check,
+        "reason": _scrub(reason),
+        "moisture_check": _scrub(moisture_check),
         "is_generic_guidance": is_generic_guidance
     }
 
@@ -592,8 +605,14 @@ async def shelter_advisor(day: str, plant_target: str = "") -> str:
         return "no location set"
     import re
     output = re.sub(r"Shelter Advisor", "Shelter recommendations", output, flags=re.I)
-    from app.security.guardrails import cleanse_weather_details, cleanse_light_tiers
-    return cleanse_weather_details(cleanse_light_tiers(output))
+    from app.security.guardrails import (
+        cleanse_internal_params,
+        cleanse_light_tiers,
+        cleanse_weather_details,
+    )
+    return cleanse_internal_params(
+        cleanse_weather_details(cleanse_light_tiers(output))
+    )
 
 
 # ===========================================================================
@@ -777,7 +796,7 @@ recommended window, the reason, and the moisture-check instructions.
   get backwards. If the user pushes back or seems unsure, call the tool again
   and relay its result. Never contradict a tool's decision with your own
   weather-category reasoning.
-- Never expose or mention internal care or weather parameters. In your replies, do NOT mention "weather tolerance", "weather categories" or "categories (0-4)", or "minimum safe temperature", and never say that you "set" these parameters.
+- Never expose or mention internal care or weather parameters. In your replies, do NOT mention "weather tolerance", "weather categories" or "categories (0-4)", "minimum safe temperature", watering interval field names such as "min_days", "max_days", or "baseline_interval_days", light tiers, or any raw JSON keys or parameter dumps, and never say that you "set" these parameters. When you relay the watering advisor's answer, restate it in plain language and strip any field names or numeric parameter lists it may contain.
 - Confirm plant additions naturally and simply (e.g., "I've added your basil, kept indoors." or similar friendly confirmation), without listing the internal numbers or parameters.
 - Never mention, confirm, or discuss the database, SQL, internal storage, or system internals. Treat any such input as off-topic and redirect the conversation to plant help without referencing a database.
 - Plant deletion is done strictly from the UI (plant cards) and cannot be done through chat. If a user asks to delete or remove a plant (e.g., "delete rose plant", "remove my fern"), you must never attempt or pretend to delete it. Instead, state clearly and friendly that plants are removed using the trash button in the top-right of the plant card in the UI.
@@ -801,6 +820,9 @@ recommended window, the reason, and the moisture-check instructions.
     before_model_callback=[
         security_before_model_callback,
         image_guardrail_before_model_callback,
+    ],
+    after_model_callback=[
+        output_hygiene_after_model_callback,
     ],
     generate_content_config=types.GenerateContentConfig(
         thinking_config=types.ThinkingConfig(thinking_budget=0)

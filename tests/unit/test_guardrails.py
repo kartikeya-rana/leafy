@@ -24,6 +24,7 @@ from app.security.guardrails import (
     redact_pii,
     cleanse_light_tiers,
     cleanse_weather_details,
+    cleanse_internal_params,
 )
 
 
@@ -255,5 +256,61 @@ def test_does_not_flag_benign_sql_queries(text):
 )
 def test_cleanse_weather_details(input_text, expected_output):
     assert cleanse_weather_details(input_text) == expected_output
+
+
+# ---------------------------------------------------------------------------
+# cleanse_internal_params — general output-hygiene net (no internal field
+# names / raw parameter dumps may reach the user, from any capability)
+# ---------------------------------------------------------------------------
+_INTERNAL_FIELD_NAMES = [
+    "baseline_interval_days", "recent_precip_mm_2d", "min_safe_temp_c",
+    "max_category", "drought_tolerance", "computed_window", "weather_tolerance",
+    "obstruction_level", "is_generic", "light_tier", "humidity_pct", "wind_kmh",
+    "precip_mm", "temp_max_c", "temp_min_c", "temp_c", "min_days", "max_days",
+    "weathercode",
+]
+
+
+@pytest.mark.parametrize(
+    "input_text",
+    [
+        # The exact leak observed in the watering card.
+        "at the end of its recommended watering interval (min_days: 2, max_days: 7). "
+        "The current weather is mild.",
+        "weather_tolerance max_category is 3 and min_safe_temp_c is -12",
+        "computed_window is today; humidity_pct: 80; wind_kmh=12",
+        "the light_tier here is 2 and precip_mm: 0",
+        "is_generic=True so guidance is generic",
+        "baseline_interval_days: 4, drought_tolerance: medium",
+        "placement=indoor",  # word field written as a raw parameter
+    ],
+)
+def test_cleanse_internal_params_strips_all_field_names(input_text):
+    cleaned = cleanse_internal_params(input_text)
+    lowered = cleaned.lower()
+    for field in _INTERNAL_FIELD_NAMES:
+        assert field not in lowered, f"internal field {field!r} leaked: {cleaned!r}"
+    # a raw "placement=" / "placement:" dump must not survive
+    assert "placement:" not in lowered and "placement=" not in lowered
+
+
+def test_cleanse_internal_params_removes_the_watering_leak():
+    text = "recommended watering interval (min_days: 2, max_days: 7). Weather is mild."
+    assert cleanse_internal_params(text) == "recommended watering interval. Weather is mild."
+
+
+@pytest.mark.parametrize(
+    "benign",
+    [
+        "Water Rosie today. Check the soil 3-5 cm deep; if dry, water it.",
+        "I'll keep its placement as indoor and note where the pot sits.",
+        "Roses like a drink every few days in mild, dry weather.",
+        "",
+    ],
+)
+def test_cleanse_internal_params_leaves_natural_prose_unchanged(benign):
+    # Natural sentences (including the word "placement" used normally) must be
+    # preserved; only raw field/parameter dumps are removed.
+    assert cleanse_internal_params(benign) == benign
 
 

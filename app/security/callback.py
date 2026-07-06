@@ -28,6 +28,9 @@ from google.adk.models.llm_response import LlmResponse
 from google.genai import types
 
 from app.security.guardrails import (
+    cleanse_internal_params,
+    cleanse_light_tiers,
+    cleanse_weather_details,
     detect_prompt_injection,
     detect_sql_or_command_injection,
     redact_pii,
@@ -149,4 +152,39 @@ async def image_guardrail_before_model_callback(
                 ),
             )
 
+    return None
+
+
+def _scrub_output_text(text: str) -> str:
+    """Runs every output-hygiene scrubber over a piece of user-facing text:
+    internal parameter names, numeric light tiers, and numeric weather
+    categories are all translated or removed."""
+    return cleanse_internal_params(
+        cleanse_light_tiers(cleanse_weather_details(text or ""))
+    )
+
+
+async def output_hygiene_after_model_callback(
+    callback_context: CallbackContext, llm_response: LlmResponse
+) -> Optional[LlmResponse]:
+    """Universal output-hygiene net run after every model call, for every
+    capability. Strips any internal field name, numeric tier, or numeric
+    weather category from the model's reply before it reaches the user, so no
+    capability can leak implementation details into chat.
+
+    Streaming partial chunks are left to the client-side scrubber (which runs
+    over the reassembled text); here we clean complete, non-partial responses
+    in place so nothing is dropped from the response object.
+    """
+    if getattr(llm_response, "partial", False):
+        return None
+    content = getattr(llm_response, "content", None)
+    if content is None or not getattr(content, "parts", None):
+        return None
+    for part in content.parts:
+        text = getattr(part, "text", None)
+        if text and not getattr(part, "thought", False):
+            cleaned = _scrub_output_text(text)
+            if cleaned != text:
+                part.text = cleaned
     return None
