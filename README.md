@@ -9,9 +9,9 @@ Built for the Kaggle × Google 5-Day AI Agents Intensive Capstone.
 
 ## The story
 
-Houseplants are everywhere. Surveys put ownership at roughly two in three households, and for a lot of people it is the small daily ritual that makes a home feel calmer and more alive.
+Houseplants are everywhere. About two in three US households own at least one, in a market worth roughly $20 billion a year, and for a lot of people it is the small daily ritual that makes a home feel calmer and more alive.
 
-Most of those plants quietly die. Industry surveys attribute the majority of home plant deaths to two mundane causes: overwatering, and the wrong amount of light. The advice people follow tends to make it worse. "Water once a week, give it bright light" ignores the two things that actually decide a plant's fate, which are your local climate and where you place it. In a cloudy, rainy city a fixed weekly schedule drowns a succulent, and a "bright" north-facing windowsill barely keeps basil going.
+Most of those plants quietly struggle. In one survey of 2,000 millennials, the average person had already killed seven houseplants, and two thirds called themselves a "plant murderer." The reason they gave, most often, was simply not knowing how much light or water the plant actually needed, and improper watering, overwatering above all, is widely cited as the single biggest killer. The advice people follow tends to make it worse. "Water once a week, give it bright light" ignores the two things that actually decide a plant's fate, which are your local climate and where you place it. In a cloudy, rainy city a fixed weekly schedule drowns a succulent, and a "bright" north-facing windowsill barely keeps basil going.
 
 Getting it right is harder than it sounds, because it is not a lookup. A good call depends on several live, changing things at once: the plant's baseline needs, today's temperature and rainfall, whether it sits indoors or outdoors, and how long since it was last watered. And the apps that exist are reactive. You snap a photo and get told the plant is already sick, which is a diagnosis after the damage is done, and single-photo diagnosis is unreliable anyway.
 
@@ -98,6 +98,15 @@ Leafy is built to guide, not to guarantee. Every recommendation is paired with a
 ## Limitations and roadmap
 
 The current build is single-user with a local profile, and multi-user accounts are future work. Identifying a plant from a photo, with a confirmation step, is designed as an enhancement to the add-a-plant flow. The Soil Matcher is designed and shares the same foundations. Deployment to a managed runtime, with a proactive daily trigger, is on the roadmap. The security screen checks each incoming turn but does not yet scrub already-stored conversation history.
+
+## Sources for the numbers above
+
+- Houseplant ownership: [New York Botanical Garden](https://www.nybg.org/planttalk/if-youre-a-plant-person-youre-not-alone/), citing National Gardening Association data
+- Market size: [Data Bridge Market Research](https://www.databridgemarketresearch.com/reports/global-indoor-plants-market)
+- Millennials killing an average of seven plants and calling themselves plant murderers: [Deseret News](https://www.deseret.com/u-s-world/2020/1/27/21083948/millennials-pressures-plant-parenting-survey-parenthood-houseplant/) and [SWNS](https://swns-research.medium.com/seven-in-10-millennials-consider-themselves-plant-parents-11ef0b34773c), reporting a 2020 OnePoll survey
+- Overwatering as the leading cause of houseplant death: [University of Connecticut extension](https://soiltesting.cahnr.uconn.edu/watering-houseplants/)
+
+These are survey and market-research figures, not peer-reviewed studies, and are used here as industry-standard context for the problem, not as scientific claims.
 
 ---
 
