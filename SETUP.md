@@ -44,7 +44,9 @@ uv sync
 uv run python -m app.fast_api_app
 ```
 
-Now open <http://localhost:8000/ui> in your browser. You will see the dashboard on the left and a chat on the right.
+`uv run` starts the server in the exact locked environment created by `uv sync`, so this one command reliably serves both the dashboard and the chat on port 8000. (`make run` runs the same command.)
+
+Now open <http://localhost:8000/ui> in your browser. You will see the dashboard on the left and a chat on the right. Type `when should I water my plants?` in the chat to confirm it streams a reply.
 
 ---
 
@@ -82,7 +84,7 @@ make eval
 
 ## Troubleshooting
 
-If the page at `/ui` is blank, make sure you opened `http://localhost:8000/ui` with the `/ui`, not just the root. If your shell says `uv: command not found`, the uv install did not finish or you need to restart your terminal so it is on your PATH. If the model returns errors or empty replies, check that `.env` has `GEMINI_API_KEY=` with a real key and that the Vertex lines are commented out. If port 8000 is already in use, stop the other process or change the port on the last line of `app/fast_api_app.py`. If weather looks unavailable, Open-Meteo may be briefly rate-limiting; Leafy degrades gracefully and recovers on the next request.
+If the page at `/ui` is blank, make sure you opened `http://localhost:8000/ui` with the `/ui`, not just the root. If your shell says `uv: command not found`, the uv install did not finish or you need to restart your terminal so it is on your PATH. If the model returns errors or empty replies, check that `.env` has `GEMINI_API_KEY=` with a real key and that the Vertex lines are commented out. If port 8000 is already in use, stop the other process or start the server on another port with `PORT=8080 uv run python -m app.fast_api_app` (then open `http://localhost:8080/ui`). If weather looks unavailable, Open-Meteo may be briefly rate-limiting; Leafy degrades gracefully and recovers on the next request.
 
 ---
 

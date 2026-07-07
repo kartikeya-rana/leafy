@@ -7,7 +7,10 @@ authors = [
 ]
 
 dependencies = [
-    "google-adk[gcp]>=2.0.0,<3.0.0",
+    # >=2.3.0: earlier 2.x lines wired get_fast_api_app's web/DevServer split
+    # differently and could fail to register the /run_sse chat route. Pinning the
+    # floor to the verified 2.3.0 guarantees a fresh `uv sync` gets working chat.
+    "google-adk[gcp]>=2.3.0,<3.0.0",
     "a2a-sdk[http-server]~=0.3.22",
     "aiohttp>=3.13.4",
     "opentelemetry-instrumentation-google-genai>=0.1.0,<1.0.0",

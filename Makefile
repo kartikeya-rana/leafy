@@ -1,13 +1,24 @@
-.PHONY: generate-traces grade eval
+.PHONY: run test generate-traces grade eval
 
-UV = /Users/kartikeyarana/Library/Python/3.13/bin/uv
-AGENTS_CLI = /Users/kartikeyarana/.local/bin/agents-cli
+# Tools are resolved from PATH so these targets work on any machine.
+# Install uv from https://docs.astral.sh/uv/getting-started/installation/
+UV = uv
+AGENTS_CLI = agents-cli
+
+# Canonical run command: starts the web server (dashboard + chat) on port 8000.
+# Open http://localhost:8000/ui once it is up.
+run:
+	$(UV) run python -m app.fast_api_app
+
+# Fast, deterministic test suite (no API key required).
+test:
+	$(UV) run pytest tests/unit tests/integration
 
 generate-traces:
-	PATH="/Users/kartikeyarana/Library/Python/3.13/bin:/Users/kartikeyarana/.local/bin:$$PATH" $(UV) run python tests/eval/generate_traces.py
+	$(UV) run python tests/eval/generate_traces.py
 
 grade:
-	PATH="/Users/kartikeyarana/Library/Python/3.13/bin:/Users/kartikeyarana/.local/bin:$$PATH" $(UV) run python tests/eval/grade_traces.py
+	$(UV) run python tests/eval/grade_traces.py
 
 eval: generate-traces grade
-	PATH="/Users/kartikeyarana/Library/Python/3.13/bin:/Users/kartikeyarana/.local/bin:$$PATH" $(UV) run pytest tests/eval/test_invariants.py
+	$(UV) run pytest tests/eval/test_invariants.py

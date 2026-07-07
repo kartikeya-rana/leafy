@@ -495,4 +495,7 @@ if os.path.isdir(UI_DIR):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Fixed default port 8000; override with PORT=... if it is already in use.
+    # UI (dashboard + chat) is served at http://localhost:<port>/ui.
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
