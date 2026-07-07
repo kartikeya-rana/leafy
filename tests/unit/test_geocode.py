@@ -120,18 +120,29 @@ def test_geocode_not_found():
         assert mock_urlopen.call_count == 2
 
 def test_geocode_network_failure():
-    # Test network failure / timeout
-    with patch("urllib.request.urlopen") as mock_urlopen:
+    # Test network failure / timeout.
+    #
+    # A URLError is a transient error, so the resilient wrapper in
+    # app/utils/resilient.py retries with backoff up to its configured
+    # _max_attempts (3) before giving up and returning the graceful
+    # "unavailable" fallback. geocode() surfaces that as found=False with the
+    # friendly "reach the geocoding service" message (it must not raise), and
+    # short-circuits without trying the query-simplification fallbacks.
+    # time.sleep is patched out so the backoff doesn't slow the test.
+    with patch("app.utils.resilient.time.sleep"), \
+         patch("urllib.request.urlopen") as mock_urlopen:
         mock_urlopen.side_effect = urllib.error.URLError("Connection timed out")
-        
+
         result = geocode("Paris, France")
-        
+
+        # Graceful fallback, not an exception.
         assert result.found is False
         assert result.lat is None
         assert result.lon is None
         assert "reach the geocoding service" in result.message
-        
-        # Since it raised an exception on the first attempt, it still tries fallback.
-        # So it should call twice if the fallback query is different.
-        # "Paris, France" simplified is "Paris, France" (same, so no fallback call).
-        assert mock_urlopen.call_count == 1
+
+        # A single geocoding query is attempted, retried 3 times by the resilient
+        # wrapper (its configured max attempts). Once the service is deemed
+        # unavailable, geocode() returns immediately without the simplification
+        # fallback queries.
+        assert mock_urlopen.call_count == 3

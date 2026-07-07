@@ -53,10 +53,13 @@ def test_kb_versus_generic_care_profiles():
     assert rose_profile.weather_tolerance.min_safe_temp_c == -12
     assert rose_profile.watering.baseline_interval_days == 4
 
-    # Verify a generic plant (not in KB) uses the generic default profile.
-    generic_profile = resolve_care_profile("Super Unknown Cactus 999")
+    # Verify a truly unknown plant (no KB name/alias/scientific name appears as a
+    # substring, and no close fuzzy match) uses the generic default profile.
+    # Note: the sentinel deliberately avoids KB words like "cactus", since the KB
+    # now has a catch-all "Cactus" entry that substring-matches such names.
+    generic_profile = resolve_care_profile("Nonexistent Wibblewort 12345")
     assert generic_profile.id == "generic"
-    assert generic_profile.common_name == "Super Unknown Cactus 999"
+    assert generic_profile.common_name == "Nonexistent Wibblewort 12345"
     assert generic_profile.weather_tolerance.max_category == 1
     assert generic_profile.weather_tolerance.min_safe_temp_c == 10
     assert generic_profile.watering.baseline_interval_days == 7
